@@ -1,12 +1,13 @@
 import java.io.*;
 import java.util.Stack;
 import java.lang.Character;
+import java.lang.Long;
+import java.lang.Math;
 
 /**
  * @author 하은
  * need to do:
  * 1. illegal expression 처리
- * 3. 
  */
 
 public class CalculatorTest
@@ -40,9 +41,86 @@ public class CalculatorTest
 	
 	private static void calPostfix(String in)
 	{
-		String[] postfixArr = in.split("\\s+");
+		String[] postArr = in.split("\\s+");
+		Stack<Long> postStack = new Stack<>();
+		
+		for (int i = 0; i < in.length(); i++)
+		{
+			String item = postArr[i];
+			long op1, op2, result;
+
+			if (isBinaryOp(item)) // 바꿔야함 binary unary 나눠야한다
+			{
+				op2 = postStack.pop();
+				op1 = postStack.pop();
+				result = calUnit(op1, op2, item);
+			}
+			
+			else if (isUnaryOp(item))
+			{
+				op1 = postStack.pop();
+				result = calUnit(op1, item);
+				
+			}
+			else // item is an operand
+				postStack.push(Long.valueOf(item));
+		}
+		
+	}
+	
+	private static long calUnit(long op1, long op2, String operator)
+	{
+		long result = 0;
+		
+		switch (operator)
+		{
+			case "+":
+				result = op1 + op2;
+				break;
+			case "-":
+				result = op1 - op2;
+				break;
+			case "*":
+				result = op1 * op2;
+				break;
+			case "/":
+				// TODO
+				// exception handling: a/0
+				result = op1 / op2;
+				break;
+			case "%":
+				// TODO
+				// exception handling: a%0
+				result = op1 % op2;
+				break;
+			case "^":
+				// TODO
+				// exception handling: a^(negative)
+				result = (long) Math.pow(op1, op2);
+				break;
+			default:
+				System.out.println("wrong operand in calUnit");
+				result = 0;
+		}
+		
+		return result;
+	}
+	
+	private static long calUnit(long op, String operator)
+	{
+		long result;
 		
 		
+	}
+	
+	private static boolean isBinaryOp(String str)
+	{
+		return str.equals("+") || str.equals("-") || str.equals("*") || str.equals("/") || str.equals("%") || str.equals("^");
+	}
+	
+	private static boolean isUnaryOp(String str)
+	{
+		return str.equals("~");
 	}
 	
 	class InToPost 
