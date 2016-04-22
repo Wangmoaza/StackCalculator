@@ -12,6 +12,26 @@ import java.lang.Math;
 
 public class CalculatorTest
 {
+	private long calResult;
+	private String postfix;
+	private String input;
+	private boolean errorFlag;
+	
+	public CalculatorTest(String in)
+	{
+		input = in;
+		
+		// TODO parsing 과정에서 exception handling
+		if (!errorFlag)
+		{
+			InToPost post = new InToPost(input);
+			post.doTrans();
+			postfix = post.toString();
+			// System.out.println(postfix);
+			calResult = calPostfix();
+		}
+	}	
+	
 	public static void main(String args[])
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -35,19 +55,43 @@ public class CalculatorTest
 
 	private static void command(String input)
 	{
-		// TODO : 아래 문장을 삭제하고 구현해라.
-		System.out.println("<< command 함수에서 " + input + " 명령을 처리할 예정입니다 >>");
+		CalculatorTest calculator = new CalculatorTest(input);
+		
+		if (calculator.isError())
+			System.out.println("ERROR");
+		
+		else
+		{
+			System.out.println(calculator.getPostfix());
+			System.out.println(calculator.getResult());
+		}
 	}
 	
-	private static void calPostfix(String in)
+	public String getPostfix()
 	{
-		String[] postArr = in.split("\\s+");
+		return postfix;
+	}
+	
+	public long getResult()
+	{
+		return calResult;
+	}
+	
+	public boolean isError()
+	{
+		return errorFlag;
+	}
+	
+	private long calPostfix()
+	{
+		String[] postArr = postfix.split("\\s+");
 		Stack<Long> postStack = new Stack<>();
+		long result = 0;
 		
-		for (int i = 0; i < in.length(); i++)
+		for (int i = 0; i < postArr.length; i++)
 		{
 			String item = postArr[i];
-			long op1, op2, result;
+			long op1, op2;
 
 			if (isBinaryOp(item)) // 바꿔야함 binary unary 나눠야한다
 			{
@@ -56,20 +100,23 @@ public class CalculatorTest
 				result = calUnit(op1, op2, item);
 			}
 			
-			else if (isUnaryOp(item))
+			else if (item.equals("~"))
 			{
 				op1 = postStack.pop();
-				result = calUnit(op1, item);
+				result = (-1) * op1;
 				
 			}
 			else // item is an operand
 				postStack.push(Long.valueOf(item));
 		}
 		
+		return result;
 	}
 	
-	private static long calUnit(long op1, long op2, String operator)
+	private long calUnit(long op1, long op2, String operator)
 	{
+		// FIXME
+		// EmptyStackException error 생김
 		long result = 0;
 		
 		switch (operator)
@@ -84,19 +131,37 @@ public class CalculatorTest
 				result = op1 * op2;
 				break;
 			case "/":
-				// TODO
-				// exception handling: a/0
-				result = op1 / op2;
+				try
+				{
+					result = op1 / op2;
+				}
+				
+				catch (ArithmeticException e)
+				{
+					// FIXME 
+					errorFlag = true;
+				}
 				break;
 			case "%":
-				// TODO
-				// exception handling: a%0
-				result = op1 % op2;
+				try
+				{
+					result = op1 % op2;
+				}
+				
+				catch (ArithmeticException e)
+				{	
+					// FIXME
+					errorFlag = true;
+				}
 				break;
 			case "^":
-				// TODO
-				// exception handling: a^(negative)
-				result = (long) Math.pow(op1, op2);
+				if (op2 >= 0)
+					result = (long) Math.pow(op1, op2);
+				
+				else
+				{
+					errorFlag = true;
+				}
 				break;
 			default:
 				System.out.println("wrong operand in calUnit");
@@ -106,33 +171,22 @@ public class CalculatorTest
 		return result;
 	}
 	
-	private static long calUnit(long op, String operator)
-	{
-		long result;
-		
-		
-	}
-	
-	private static boolean isBinaryOp(String str)
+
+	private boolean isBinaryOp(String str)
 	{
 		return str.equals("+") || str.equals("-") || str.equals("*") || str.equals("/") || str.equals("%") || str.equals("^");
-	}
-	
-	private static boolean isUnaryOp(String str)
-	{
-		return str.equals("~");
 	}
 	
 	class InToPost 
 	{
 		// modification from http://www.tutorialspoint.com/javaexamples/data_intopost.htm
 		private Stack<Character> theStack;
-		private String input;
+		private String infix;
 		private String output = "";
 		   
 		public InToPost(String in) 
 		{
-			input = in.trim();
+			infix = in.trim();
 			theStack = new Stack<Character>();
 		}
 		   
@@ -141,9 +195,9 @@ public class CalculatorTest
 			boolean binaryMinusFlag = false;
 			boolean newNumberFlag = false;
 
-			for (int j = 0; j < input.length(); j++) 
+			for (int j = 0; j < infix.length(); j++) 
 			{
-				char ch = input.charAt(j);
+				char ch = infix.charAt(j);
 
 				if (ch == '-')
 				{
