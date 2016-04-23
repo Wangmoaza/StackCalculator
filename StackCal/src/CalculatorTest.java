@@ -3,13 +3,14 @@ import java.util.Stack;
 import java.lang.Character;
 import java.lang.Long;
 import java.lang.Math;
+import java.util.EmptyStackException;
 
 /**
+ * 
  * @author 하은
- * need to do:
- * 1. illegal expression 처리
+ * 1. prefix, postfix 형태로 들어올 때 잡아줘야함
+ * 2. () 짝 안맞을 때
  */
-
 public class CalculatorTest
 {
 	private long calResult;
@@ -88,26 +89,40 @@ public class CalculatorTest
 		Stack<Long> postStack = new Stack<>();
 		long result = 0;
 		
-		for (int i = 0; i < postArr.length; i++)
+		try
 		{
-			String item = postArr[i];
-			long op1, op2;
-
-			if (isBinaryOp(item)) // 바꿔야함 binary unary 나눠야한다
+			for (int i = 0; i < postArr.length; i++)
 			{
-				op2 = postStack.pop();
-				op1 = postStack.pop();
-				result = calUnit(op1, op2, item);
+				String item = postArr[i];
+				long op1, op2;
+				
+				if (isBinaryOp(item))
+				{
+					op2 = postStack.pop();
+					op1 = postStack.pop();
+					result = calUnit(op1, op2, item);
+					postStack.push(result);
+				}
+				
+				else if (item.equals("~"))
+				{
+					op1 = postStack.pop();
+					result = (-1) * op1;
+					postStack.push(result);
+					
+				}
+				else // item is an operand
+					postStack.push(Long.valueOf(item));
 			}
 			
-			else if (item.equals("~"))
-			{
-				op1 = postStack.pop();
-				result = (-1) * op1;
-				
-			}
-			else // item is an operand
-				postStack.push(Long.valueOf(item));
+			result = postStack.pop();
+			
+			if (!postStack.isEmpty()) // result should have been the only thing left in stack
+				errorFlag = true;
+		}
+		catch (EmptyStackException e)
+		{
+			errorFlag = true;
 		}
 		
 		return result;
@@ -115,59 +130,43 @@ public class CalculatorTest
 	
 	private long calUnit(long op1, long op2, String operator)
 	{
-		// FIXME
-		// EmptyStackException error 생김
 		long result = 0;
 		
-		switch (operator)
+		try
 		{
-			case "+":
-				result = op1 + op2;
-				break;
-			case "-":
-				result = op1 - op2;
-				break;
-			case "*":
-				result = op1 * op2;
-				break;
-			case "/":
-				try
-				{
+			switch (operator)
+			{
+				case "+":
+					result = op1 + op2;
+					break;
+				case "-":
+					result = op1 - op2;
+					break;
+				case "*":
+					result = op1 * op2;
+					break;
+				case "/":
 					result = op1 / op2;
-				}
-				
-				catch (ArithmeticException e)
-				{
-					// FIXME 
-					errorFlag = true;
-				}
-				break;
-			case "%":
-				try
-				{
+					break;
+				case "%":
 					result = op1 % op2;
-				}
-				
-				catch (ArithmeticException e)
-				{	
-					// FIXME
-					errorFlag = true;
-				}
-				break;
-			case "^":
-				if (op2 >= 0)
-					result = (long) Math.pow(op1, op2);
-				
-				else
-				{
-					errorFlag = true;
-				}
-				break;
-			default:
-				System.out.println("wrong operand in calUnit");
-				result = 0;
+					break;
+				case "^":
+					if (op2 >= 0)
+						result = (long) Math.pow(op1, op2);
+					else
+						errorFlag = true;
+	
+					break;
+				default:
+					System.out.println("wrong operand in calUnit");
+			}
 		}
 		
+		catch (ArithmeticException e) // catch a/0, a%0
+		{
+			errorFlag = true;
+		}
 		return result;
 	}
 	
