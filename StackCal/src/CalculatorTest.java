@@ -16,19 +16,21 @@ public class CalculatorTest
 	private long calResult;
 	private String postfix;
 	private String input;
-	private boolean errorFlag;
+	private boolean validity;
 	
 	public CalculatorTest(String in)
 	{
 		input = in;
-		
-		// TODO parsing 과정에서 exception handling
-		if (!errorFlag)
+		postfix = "";
+		calResult = 0;
+		validity = simpleValidityCheck();
+
+		if (validity)
 		{
 			InToPost post = new InToPost(input);
 			post.doTrans();
 			postfix = post.toString();
-			// System.out.println(postfix);
+			//System.out.println(postfix);
 			calResult = calPostfix();
 		}
 	}	
@@ -58,7 +60,7 @@ public class CalculatorTest
 	{
 		CalculatorTest calculator = new CalculatorTest(input);
 		
-		if (calculator.isError())
+		if (!calculator.isValid())
 			System.out.println("ERROR");
 		
 		else
@@ -78,9 +80,56 @@ public class CalculatorTest
 		return calResult;
 	}
 	
-	public boolean isError()
+	public boolean isValid()
 	{
-		return errorFlag;
+		return validity;
+	}
+	
+	private boolean simpleValidityCheck()
+	{
+		String infix = input.trim();
+		String[] infixArr = infix.split("[+]|[-]|[*]|[/]|[%]|[\\^]");
+		Stack<Character> parenStack = new Stack<>();
+		
+		// check if two operands appear consecutively
+		for (int i = 0; i < infixArr.length; i++)
+		{
+			int consecCnt = 0;
+			String[] innerArr = infixArr[i].split("\\s+");
+			
+			for (int j = 0; j < innerArr.length; j++)
+			{
+				if (!innerArr[j].equals(""))
+					consecCnt ++;
+			}
+			
+			if (consecCnt > 1)
+				return false;
+		}
+		
+		// check parenthesis closure
+		for (int i = 0; i < infix.length(); i++)
+		{
+			char ch = infix.charAt(i);
+		
+			try
+			{
+				if (ch == '(')
+					parenStack.push(ch);
+				else if (ch == ')')
+					parenStack.pop();
+			}
+			
+			catch(EmptyStackException e)
+			{
+				return false;
+			}
+		}
+
+		if (!parenStack.isEmpty())
+			return false;
+		
+		return true;
 	}
 	
 	private long calPostfix()
@@ -118,11 +167,12 @@ public class CalculatorTest
 			result = postStack.pop();
 			
 			if (!postStack.isEmpty()) // result should have been the only thing left in stack
-				errorFlag = true;
+				validity = false;
 		}
+		
 		catch (EmptyStackException e)
 		{
-			errorFlag = true;
+			validity = false;
 		}
 		
 		return result;
@@ -152,11 +202,10 @@ public class CalculatorTest
 					result = op1 % op2;
 					break;
 				case "^":
-					if (op2 >= 0)
-						result = (long) Math.pow(op1, op2);
+					if (op1 == 0 && op2 < 0)
+						validity = false;
 					else
-						errorFlag = true;
-	
+						result = (long) Math.pow(op1, op2);
 					break;
 				default:
 					System.out.println("wrong operand in calUnit");
@@ -165,17 +214,19 @@ public class CalculatorTest
 		
 		catch (ArithmeticException e) // catch a/0, a%0
 		{
-			errorFlag = true;
+			validity = false;
 		}
 		return result;
 	}
 	
-
 	private boolean isBinaryOp(String str)
 	{
 		return str.equals("+") || str.equals("-") || str.equals("*") || str.equals("/") || str.equals("%") || str.equals("^");
 	}
 	
+	/**
+	 * This inner class parses infix to postfix.
+	 */
 	class InToPost 
 	{
 		// modification from http://www.tutorialspoint.com/javaexamples/data_intopost.htm
@@ -244,15 +295,9 @@ public class CalculatorTest
 		            newNumberFlag = false;
 		         }
 
-				else if (ch == '\t' || ch == ' ')
+				else if (ch == 9 || ch == 32)
 				{
 		            newNumberFlag = true;
-				}
-
-				else
-				{
-					System.out.println("ERROR");
-					break;
 				}
 			}
 		
@@ -261,7 +306,7 @@ public class CalculatorTest
 		         output = output + " " + theStack.pop();
 			}
 		      
-			return output; 
+			return output;
 		}
 
 		private int precedence(char ch)
@@ -314,7 +359,7 @@ public class CalculatorTest
 		               break;
 		            }
 
-		            else if (topPrec == thisPrec && (opThis == '^' || opThis == '~'))
+		            else if (topPrec == thisPrec && (opThis == '^' || opThis == '~')) // for right-associative operators
 		            {
 		               theStack.push(opTop);
 		               break;
