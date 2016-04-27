@@ -5,12 +5,7 @@ import java.lang.Long;
 import java.lang.Math;
 import java.util.EmptyStackException;
 
-/**
- * 
- * @author 하은
- * 1. prefix, postfix 형태로 들어올 때 잡아줘야함
- * 2. () 짝 안맞을 때
- */
+
 public class CalculatorTest
 {
 	private long calResult;
@@ -25,12 +20,11 @@ public class CalculatorTest
 		calResult = 0;
 		validity = simpleValidityCheck();
 
-		if (validity)
+		if (validity)	//only do the block when infix is valid
 		{
 			InToPost post = new InToPost(input);
 			post.doTrans();
 			postfix = post.toString();
-			//System.out.println(postfix);
 			calResult = calPostfix();
 		}
 	}	
@@ -70,21 +64,37 @@ public class CalculatorTest
 		}
 	}
 	
+	/**
+	 * Get converted postfix expression
+	 * @return postfix string
+	 */
 	public String getPostfix()
 	{
 		return postfix;
 	}
 	
+	/**
+	 * Get calculated result
+	 * @return calculated result
+	 */
 	public long getResult()
 	{
 		return calResult;
 	}
 	
+	/**
+	 * Returns validity of the expression (whether it has any errors)
+	 * @return validity of the expression
+	 */
 	public boolean isValid()
 	{
 		return validity;
 	}
 	
+	/**
+	 * Checks infix validity, cannot catch every error
+	 * @return validity of input infix expression
+	 */
 	private boolean simpleValidityCheck()
 	{
 		String infix = input.trim();
@@ -99,7 +109,7 @@ public class CalculatorTest
 			
 			for (int j = 0; j < innerArr.length; j++)
 			{
-				if (!innerArr[j].equals(""))
+				if (!innerArr[j].equals("") && !innerArr[j].equals("(") && !innerArr[j].equals(")"))
 					consecCnt ++;
 			}
 			
@@ -131,7 +141,11 @@ public class CalculatorTest
 		
 		return true;
 	}
-	
+
+	/**
+	 * Evaluates postfix expression
+	 * @return result of calculation
+	 */
 	private long calPostfix()
 	{
 		String[] postArr = postfix.split("\\s+");
@@ -153,14 +167,14 @@ public class CalculatorTest
 					postStack.push(result);
 				}
 				
-				else if (item.equals("~"))
+				else if (item.equals("~"))	// unary operator
 				{
 					op1 = postStack.pop();
 					result = (-1) * op1;
 					postStack.push(result);
 					
 				}
-				else // item is an operand
+				else // operand
 					postStack.push(Long.valueOf(item));
 			}
 			
@@ -178,6 +192,13 @@ public class CalculatorTest
 		return result;
 	}
 	
+	/**
+	 * Calculates binary operation (+, -, %, *, /, ^) unit
+	 * @param op1 first operand
+	 * @param op2 second operand
+	 * @param operator binary operator
+	 * @return result of unit calculation
+	 */
 	private long calUnit(long op1, long op2, String operator)
 	{
 		long result = 0;
@@ -207,8 +228,6 @@ public class CalculatorTest
 					else
 						result = (long) Math.pow(op1, op2);
 					break;
-				default:
-					System.out.println("wrong operand in calUnit");
 			}
 		}
 		
@@ -219,6 +238,11 @@ public class CalculatorTest
 		return result;
 	}
 	
+	/**
+	 * Checks whether input string is a binary operator
+	 * @param str operator
+	 * @return true if binary operator, otherwise false
+	 */
 	private boolean isBinaryOp(String str)
 	{
 		return str.equals("+") || str.equals("-") || str.equals("*") || str.equals("/") || str.equals("%") || str.equals("^");
@@ -239,7 +263,11 @@ public class CalculatorTest
 			infix = in.trim();
 			theStack = new Stack<Character>();
 		}
-		   
+		
+		/**
+		 * Converts infix to postfix
+		 * @return converted postfix string
+		 */
 		public String doTrans() 
 		{
 			boolean binaryMinusFlag = false;
