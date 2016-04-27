@@ -18,7 +18,7 @@ public class CalculatorTest
 		input = in;
 		postfix = "";
 		calResult = 0;
-		validity = simpleValidityCheck();
+		validity = validityCheck(in);
 
 		if (validity)	//only do the block when infix is valid
 		{
@@ -95,51 +95,127 @@ public class CalculatorTest
 	 * Checks infix validity, cannot catch every error
 	 * @return validity of input infix expression
 	 */
-	private boolean simpleValidityCheck()
+	private boolean validityCheck(String s)
 	{
-		String infix = input.trim();
-		String[] infixArr = infix.split("[+]|[-]|[*]|[/]|[%]|[\\^]");
+		s = s.trim();
 		Stack<Character> parenStack = new Stack<>();
-		
-		// check if two operands appear consecutively
-		for (int i = 0; i < infixArr.length; i++)
+		int infixFlag = 0; // operand" +1. operator: +100
+		boolean newNumberFlag = true;
+		boolean binaryMinusFlag = false;
+
+		int i = 0;
+
+		while(i < s.length())
 		{
-			int consecCnt = 0;
-			String[] innerArr = infixArr[i].split("\\s+");
-			
-			for (int j = 0; j < innerArr.length; j++)
+			char ch = s.charAt(i);
+			 
+			if (ch == '-')
 			{
-				if (!innerArr[j].equals("") && !innerArr[j].equals("(") && !innerArr[j].equals(")"))
-					consecCnt ++;
+				if (binaryMinusFlag)
+					infixFlag += 100;
+
+				binaryMinusFlag = false;
+				newNumberFlag = true;
+				i++;
 			}
-			
-			if (consecCnt > 1)
+			 
+			else if (ch == '*' || ch == '/' || ch == '%' || ch == '+' || ch == '^')
+			{
+				binaryMinusFlag = false;
+				newNumberFlag = true;
+				infixFlag += 100;
+				i++;
+			}
+			 
+			else if ('0' <= ch && ch <= '9')
+			{
+				if (newNumberFlag)
+					infixFlag += 1;
+			    
+				binaryMinusFlag = true;
+				newNumberFlag = false;
+				i++;
+			}
+			 
+			else if (ch == '(')
+			{
+				parenStack.push(ch);
+				int j;
+
+				try
+				{
+					for (j = 1; !parenStack.isEmpty() && i+j < s.length(); j++)
+					{
+					    char ch2 = s.charAt(i+j);
+					    if (ch2 == '(')
+					        parenStack.push(ch2);
+					    else if (ch2 == ')')
+					        parenStack.pop();
+					} // i+j at next index of matching ')'
+				}
+				
+				catch(EmptyStackException e)
+				{
+					return false;
+				}
+
+				if (!parenStack.isEmpty())
+				{
+					//System.out.println("!parenStack.isEmpty()");
+					return false;
+				}
+
+
+				if (!validityCheck(s.substring(i+1, i+j-1)))
+				{
+					//System.out.println("!isInfix(s.substring(i+1, j-1))");
+					return false;
+				}
+
+				infixFlag += 1;
+				binaryMinusFlag = true;
+				newNumberFlag = true;
+				i += j;
+			}
+			 
+			else if (ch == ')')
+			{
+				//System.out.println("ch == ')'");
 				return false;
-		}
-		
-		// check parenthesis closure
-		for (int i = 0; i < infix.length(); i++)
-		{
-			char ch = infix.charAt(i);
-		
-			try
-			{
-				if (ch == '(')
-					parenStack.push(ch);
-				else if (ch == ')')
-					parenStack.pop();
 			}
-			
-			catch(EmptyStackException e)
+
+			else if (ch == 9 || ch == 32)
 			{
+				newNumberFlag = true;
+				i++;
+			}
+
+			else // invalid character
+			{
+				//System.out.println("invalid characer");
+				return false;
+			}
+
+			//System.out.println(infixFlag);
+
+			if (infixFlag == 1 || infixFlag == 101 || infixFlag == 0)
+			{}
+
+			else if (infixFlag == 102)
+				infixFlag = 1;
+
+			else
+			{
+				//System.out.println("else");
 				return false;
 			}
 		}
 
-		if (!parenStack.isEmpty())
+		if (infixFlag != 0)
+			return true;
+
+		else
 			return false;
-		
-		return true;
 	}
 
 	/**
