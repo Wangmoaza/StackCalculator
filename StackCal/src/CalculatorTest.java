@@ -5,6 +5,11 @@ import java.lang.Long;
 import java.lang.Math;
 import java.util.EmptyStackException;
 
+/**
+ * Converts infix notation to postfix and evalutates the expression.
+ * @author Ha-Eun Hwangbo
+ * @version 2.0
+ */
 
 public class CalculatorTest
 {
@@ -92,14 +97,14 @@ public class CalculatorTest
 	}
 	
 	/**
-	 * Checks infix validity, cannot catch every error
+	 * Checks infix validity
 	 * @return validity of input infix expression
 	 */
 	private boolean validityCheck(String s)
 	{
 		s = s.trim();
 		Stack<Character> parenStack = new Stack<>();
-		int infixFlag = 0; // operand" +1. operator: +100
+		int infixFlag = 0; // operand: +1. operator: +100
 		boolean newNumberFlag = true;
 		boolean binaryMinusFlag = false;
 
@@ -139,6 +144,7 @@ public class CalculatorTest
 			 
 			else if (ch == '(')
 			{
+				// check parentheses closure
 				parenStack.push(ch);
 				int j;
 
@@ -151,7 +157,7 @@ public class CalculatorTest
 					        parenStack.push(ch2);
 					    else if (ch2 == ')')
 					        parenStack.pop();
-					} // i+j at next index of matching ')'
+					} // i+j-1 at index of matching ')'
 				}
 				
 				catch(EmptyStackException e)
@@ -161,14 +167,12 @@ public class CalculatorTest
 
 				if (!parenStack.isEmpty())
 				{
-					//System.out.println("!parenStack.isEmpty()");
 					return false;
 				}
 
-
+				// should be full infix expression between closed parentheses
 				if (!validityCheck(s.substring(i+1, i+j-1)))
 				{
-					//System.out.println("!isInfix(s.substring(i+1, j-1))");
 					return false;
 				}
 
@@ -180,11 +184,10 @@ public class CalculatorTest
 			 
 			else if (ch == ')')
 			{
-				//System.out.println("ch == ')'");
 				return false;
 			}
 
-			else if (ch == 9 || ch == 32)
+			else if (ch == 9 || ch == 32) // whitespace
 			{
 				newNumberFlag = true;
 				i++;
@@ -192,29 +195,25 @@ public class CalculatorTest
 
 			else // invalid character
 			{
-				//System.out.println("invalid characer");
 				return false;
 			}
 
-			//System.out.println(infixFlag);
-
+			// validity check
+			// each stage should be in <operand> || <operand><operator> || <operand><operator><operand>
 			if (infixFlag == 1 || infixFlag == 101 || infixFlag == 0)
 			{}
 
-			else if (infixFlag == 102)
+			else if (infixFlag == 102) // full infix expression
 				infixFlag = 1;
 
 			else
-			{
-				//System.out.println("else");
 				return false;
-			}
 		}
 
 		if (infixFlag != 0)
 			return true;
 
-		else
+		else // empty string is invalid
 			return false;
 	}
 
@@ -228,43 +227,34 @@ public class CalculatorTest
 		Stack<Long> postStack = new Stack<>();
 		long result = 0;
 		
-		try
+		for (int i = 0; i < postArr.length; i++)
 		{
-			for (int i = 0; i < postArr.length; i++)
+			String item = postArr[i];
+			long op1, op2;
+			
+			if (isBinaryOp(item))
 			{
-				String item = postArr[i];
-				long op1, op2;
-				
-				if (isBinaryOp(item))
-				{
-					op2 = postStack.pop();
-					op1 = postStack.pop();
-					result = calUnit(op1, op2, item);
-					postStack.push(result);
-				}
-				
-				else if (item.equals("~"))	// unary operator
-				{
-					op1 = postStack.pop();
-					result = (-1) * op1;
-					postStack.push(result);
-					
-				}
-				else // operand
-					postStack.push(Long.valueOf(item));
+				op2 = postStack.pop();
+				op1 = postStack.pop();
+				result = calUnit(op1, op2, item);
+				postStack.push(result);
 			}
 			
-			result = postStack.pop();
+			else if (item.equals("~"))	// unary operator
+			{
+				op1 = postStack.pop();
+				result = (-1) * op1;
+				postStack.push(result);
+				
+			}
 			
-			if (!postStack.isEmpty()) // result should have been the only thing left in stack
-				validity = false;
+			else // operand
+			{
+				postStack.push(Long.valueOf(item));
+			}
 		}
 		
-		catch (EmptyStackException e)
-		{
-			validity = false;
-		}
-		
+		result = postStack.pop();
 		return result;
 	}
 	
